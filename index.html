@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="gbk"/>
+        <title>DO测试页面</title>
+        <meta name="DO" content=""/>
+        <meta name="keywords" content=""/>
+        <link href="http://style.china.alibaba.com/css/lib/fdev-v4/reset/reset-min.css" rel="stylesheet"/>
+        <script src="http://style.china.alibaba.com/js/lib/fdev-v4/core/fdev-min.js"></script>
+		<script src="Sandbox.js"></script>
+		<script src="DO.js"></script>
+        <base target="_blank"/>
+    </head>
+    <body>
+        <div id="doc">
+            <div id="alibar">alibar</div>
+            <div id="header" class="w952">header</div>
+            <div id="content" class="w952">
+				<div class="app-test" data-app-config2='{"a":"12333333333"}'></div>
+				<div class="app-test" data-app-config='{"a":"132"}'></div>
+			</div>
+            <div id="footer">footer</div>
+        </div>
+        <script>
+			DO.debug(true);
+			DO.register('~app-test',function(sandbox){
+				console.log(sandbox);
+				sandbox.extraTest();
+				return {
+					init:function(){
+						sandbox.listen(['test1','test2'],function(event,data){
+							console.log(event);
+							console.log(event.namespace);
+							console.log(data);
+						},this);
+						sandbox.listen('DO.ready',function(){
+							console.log('DO.ready');
+						});
+					},
+					destroy:function(){
+						console.log(14);
+					}
+				}
+			});
+			
+			DO.register('app-test2',function(sandbox){
+				return {
+					init:function(){
+						sandbox.notify('test1',{
+							a:1,
+							b:2
+						});
+						console.log(DO.get('app-test','node'));
+						
+						DO.extraTest();
+					},
+					children:{
+						'child-test':{
+							init:function(parentId,selfId){
+								console.log(3,'APP-->chinld'+parentId);
+								console.log(3,'APP-->chinld'+selfId);
+							}
+						},
+						'child-test2':{
+							init:function(parentId,selfId){
+								console.log(3,'APP-->chinld'+parentId);
+								console.log(3,'APP-->chinld'+selfId);
+							}
+						}
+					},
+					destroy:function(){
+						
+					}
+				};
+			});
+			DO.startAll();
+		</script>
+    </body>
+</html>
