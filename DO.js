@@ -7,7 +7,7 @@
 	var SandBox = $.SandBox;
 	
 	var DO = win.DO = $.DO = function(){
-		var __apps = {},__appData={};
+		var __apps = {},__appsData={};
 		
 		var _createInstance = function(appId,config){
 			var instance = __apps[appId].creator(new SandBox(this,{
@@ -105,7 +105,7 @@
 				return this;
 			},
 			get:function(appId,type){
-				return __appData[appId]&&__appData[appId][type];
+				return __appsData[appId]&&__appsData[appId][type];
 			},
 			set:function(type,appId,data){
 				var self = this;
@@ -114,10 +114,10 @@
 					data = appId;
 					type = 'node';
 				}
-				if(!__appData[appId]){
-					__appData[appId] = {};
+				if(!__appsData[appId]){
+					__appsData[appId] = {};
 				}
-				__appData[appId][type] = data;
+				__appsData[appId][type] = data;
 			},
 			debug:function(v){
 				$.DEBUG = Boolean(v);
