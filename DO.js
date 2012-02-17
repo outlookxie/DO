@@ -1,5 +1,5 @@
 /**
- *	DO 一个Core Applation
+ *	DO 一个Core modulelation
  */
  
 (function($,win,doc){
@@ -7,11 +7,11 @@
 	var SandBox = $.SandBox;
 	
 	var DO = win.DO = $.DO = function(){
-		var __apps = {},__appsData={};
+		var __modules = {},__modulesData={};
 		
-		var _createInstance = function(appId,config){
-			var instance = __apps[appId].creator(new SandBox(this,{
-					appId:appId,
+		var _createInstance = function(moduleId,config){
+			var instance = __modules[moduleId].creator(new SandBox(this,{
+					moduleId:moduleId,
 					config:config
 				})),
 				name,
@@ -26,58 +26,58 @@
 									return method.apply(this,arguments)
 								}catch(e){
 									if(win.console&&win.console.log){
-										win.console.log('APP:'+appId+' ',name+'() '+e.message);
+										win.console.log(9,'module:'+moduleId+' ',name+'() '+e.message);
 									}
 								}
 							}
-						}(name,method)
+						}(name,method);
 					}
 				}
 			}
 			return instance;
 		};
 		
-		var triggerAppEvent = function(){
+		var triggermoduleEvent = function(){
 			$(doc).trigger('DO.ready');
 		};
 		
 		return {
-			register:function(appId,creator){
-				if($.type(appId)==='function'){
-					creator = appId;
-					appId = 'app'+$.now();
+			register:function(moduleId,creator){
+				if($.type(moduleId)==='function'){
+					creator = moduleId;
+					moduleId = 'module'+$.now();
 				}
 				
-				var isAutoInit = /^~\w*/.test(appId);
+				var isAutoInit = /^~\w*/.test(moduleId);
 				if(isAutoInit){
-					appId = appId.substring(1);
+					moduleId = moduleId.substring(1);
 				}
 				
-				__apps[appId] = {
+				__modules[moduleId] = {
 					creator:creator,
 					instance:null
 				};
 				
-				isAutoInit&&this.start(appId);
+				isAutoInit&&this.start(moduleId);
 			},
-			start:function(appId){
-				__apps[appId].instance = _createInstance(appId,__apps[appId]);
-				__apps[appId].instance.init&&__apps[appId].instance.init();
-				if($.type(__apps[appId].instance.children)=='object'){
-					var children = __apps[appId].instance.children;
+			start:function(moduleId){
+				__modules[moduleId].instance = _createInstance(moduleId,__modules[moduleId]);
+				__modules[moduleId].instance.init&&__modules[moduleId].instance.init(moduleId);
+				if($.type(__modules[moduleId].instance.children)=='object'){
+					var children = __modules[moduleId].instance.children;
 					for(var child in children){
 						if($.type(children[child].init)=='function'){
-							children[child].init(appId,child);
+							children[child].init(moduleId,child);
 						}
 					}
 				}
 				//触发所有模块初始化完毕
 				return this;
 			},
-			stop:function(appId){
-				var data = __apps[appId];
+			stop:function(moduleId){
+				var data = __modules[moduleId];
 				if(data&&data.instance&&$type(data.instance.destory)=='function'){
-					data.instance.destory();
+					data.instance.destory(moduleId);
 					data.instance = null;
 				}
 				return this;
@@ -85,39 +85,41 @@
 			startAll:function(){
 				var self = this;
 				$(doc).ready(function(){
-					for(var appId in __apps){
-						if(__apps[appId]&&!__apps[appId].instance){
-							self.start(appId);
+					for(var moduleId in __modules){
+						if(__modules[moduleId]&&!__modules[moduleId].instance){
+							self.start(moduleId);
 						}
 					}
-					triggerAppEvent();
+					triggermoduleEvent();
 				});
 			},
 			stopAll:function(){
-				for(var appId in __apps){
-					if(__apps[appId]){
-						this.stop(appId);
+				for(var moduleId in __modules){
+					if(__modules[moduleId]){
+						this.stop(moduleId);
 					}
 				}
 			},
-			refresh:function(appId){
-				__apps[appId].instance.init&&__apps[appId].instance.init();
+			refresh:function(moduleId){
+				__modules[moduleId].instance.init&&__modules[moduleId].instance.init();
 				return this;
 			},
-			get:function(appId,type){
-				return __appsData[appId]&&__appsData[appId][type];
+			get:function(moduleId){
+				var _moduleData = __modulesData[moduleId];
+				return function(type){
+					return _moduleData&&_moduleData[type];
+				}
 			},
-			set:function(type,appId,data){
+			set:function(moduleId){
 				var self = this;
-				if(!appId) {
-					appId = type;
-					data = appId;
-					type = 'node';
+				if(!__modules[moduleId]) return $.noop;
+				
+				var __moduleData = __modulesData[moduleId]||(__modulesData[moduleId]={});
+				
+				return function(type,data){
+					__moduleData[type] = data;
+					return true;
 				}
-				if(!__appsData[appId]){
-					__appsData[appId] = {};
-				}
-				__appsData[appId][type] = data;
 			},
 			debug:function(v){
 				$.DEBUG = Boolean(v);

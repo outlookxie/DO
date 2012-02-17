@@ -5,24 +5,57 @@
 (function($,win,doc){
 	var SandBox =  $.SandBox =function(scope,extra){
 		this.extra = extra;
+		this.moduleId = this.extra.moduleId;
 		this.node = this._getNode();
 		return this;
 	};
 	SandBox.prototype={
 		_config:{
-			appPrefix:'APP.',
-			appPrefixReg:/^APP.\w*/,
+			modulePrefix:'module.',
+			modulePrefixReg:/^module.\w*/,
 			doPrefix:'DO.ready'
 		},
 		_getEventType:function(eventType){
 			var self = this;
-			if(!self._config.appPrefixReg.test(eventType)&&eventType!==self._config.doPrefix){
-				eventType =  self._config.appPrefix+eventType;
+			if(!self._config.modulePrefixReg.test(eventType)&&eventType!==self._config.doPrefix){
+				eventType =  self._config.modulePrefix+eventType;
 			}
 			return eventType;
 		},
+		_getNode:function(){
+			var self = this,
+				conf = self.extra.config,
+				moduleIdFix = self.extra.moduleId,
+				nodeConfg = {},
+				moduleNode,
+				moduleClass;
+			if(/^~\w*/.test(conf.moduleId)){
+				moduleIdFix  = moduleIdFix.substring(1);
+			}
+			moduleClass = '.'+moduleIdFix+'[data-mod-config]';
+			moduleNode = $(moduleClass,document.body).first();
+			if(moduleNode.length){
+				nodeConfg=moduleNode.data('mod-config');
+				DO.set(moduleIdFix)('node',{
+					el:moduleNode,
+					config:nodeConfg
+				});
+				return {
+					el:moduleNode,
+					config:nodeConfg
+				}
+			}
+			return {};
+		},
+		/**
+		 * 注册监听事件，支持批量事件的监听
+		 * @param  eventType {String|Array} 事件类型
+		 * @param handle {Function} 事件响应之后的回调函数
+		 * @param  scope
+		 */
 		listen:function(eventType,handle,scope){
-			var self = this;
+ 			var self = this;
+			scope = scope || window;
 			if($.type(eventType)==='string'){
 				eventType = [eventType];
 			}
@@ -33,35 +66,15 @@
 				handle.apply(scope,[event,data]);
 			});
 		},
+		/**
+		 * 时间推送
+		 * @param  type {String} 事件类型
+		 * @param data {Object} 事件数据
+		 */
 		notify:function(type,data){
 			var self = this;
 				type = self._getEventType(type);
 			$(doc).trigger(type,data);
-		},
-		_getNode:function(){
-			var self = this,
-				conf = self.extra.config,
-				appIdFix = self.extra.appId,
-				nodeConfg = {},
-				appNode,
-				appClass;
-			if(/^~\w*/.test(conf.appId)){
-				appIdFix  = appIdFix.substring(1);
-			}
-			appClass = '.'+appIdFix+'[data-app-config]';
-			appNode = $(appClass,document.body).first();
-			if(appNode){
-				nodeConfg=appNode.data('app-config');
-				DO.set('node',appIdFix,{
-					el:appNode,
-					config:nodeConfg
-				});
-				return {
-					el:appNode,
-					config:nodeConfg
-				}
-			}
-			return {};
 		}
 	};
 	

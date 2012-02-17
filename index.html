@@ -16,42 +16,41 @@
             <div id="alibar">alibar</div>
             <div id="header" class="w952">header</div>
             <div id="content" class="w952">
-				<div class="app-test" data-app-config2='{"a":"12333333333"}'></div>
-				<div class="app-test" data-app-config='{"a":"132"}'></div>
+				<div class="mod-test" data-mod-config2='{"a":"12333333333"}'></div>
+				<div class="mod-test" data-mod-config='{"a":"132"}'></div>
 			</div>
             <div id="footer">footer</div>
         </div>
         <script>
 			DO.debug(true);
-			DO.register('~app-test',function(sandbox){
+			DO.register('~mod-test',function(sandbox){
 				console.log(sandbox);
 				sandbox.extraTest();
 				return {
 					init:function(){
-						sandbox.listen(['test1','test2'],function(event,data){
+						sandbox.listen(['message','message2'],function(event,data){
 							console.log(event);
-							console.log(event.namespace);
 							console.log(data);
 						},this);
 						sandbox.listen('DO.ready',function(){
 							console.log('DO.ready');
 						});
 					},
-					destroy:function(){
-						console.log(14);
+					destroy:function(moduleId){
+						console.log(moduleId+'destroy');
 					}
 				}
 			});
 			
-			DO.register('app-test2',function(sandbox){
+			DO.register('mod-test2',function(sandbox){
 				return {
 					init:function(){
-						sandbox.notify('test1',{
+						sandbox.notify('message',{
 							a:1,
 							b:2
 						});
-						console.log(DO.get('app-test','node'));
-						
+						console.log('get')
+						console.log(DO.get('mod-test'/*moduleId*/)('node'/*type*/));
 						DO.extraTest();
 					},
 					children:{
