@@ -10,6 +10,7 @@
 		return this;
 	};
 	SandBox.prototype={
+		constructor:SandBox,
 		_config:{
 			modulePrefix:'module.',
 			modulePrefixReg:/^module.\w*/,
