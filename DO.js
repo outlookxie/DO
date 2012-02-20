@@ -1,5 +1,5 @@
 /**
- *	DO 一个Core modulelation
+ *	DO 一个Core modulelation 2012.02.20
  */
  
 (function($,win,doc){
