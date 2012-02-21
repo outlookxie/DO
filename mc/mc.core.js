@@ -10,7 +10,6 @@
 	var MC = win.MC = $.MC = function(){
 	
 		var _defaultOptions = {
-			entryName: 'init',
 			configField: 'mod-config',
 			once: true,
 			root: null,
@@ -20,12 +19,14 @@
 	
 		//无序列保存注册的模块的信息
 		var __modules = {};
-		
+		//无序列保存延迟加载模块的信息		
 		var __lazyModules = {};
-		
+			
 		//无序列保存模块的数据
 		var __modulesData = {};
-		
+
+		var __layoutData = {};
+
 		var __fns = {};
 		
 		$.extend(__fns,{
@@ -45,17 +46,32 @@
 					instance = module.creator(sandbox);
 				}
 				instance = 	instance||{};
-				instance.__sandbox = sandbox;
 				// 保证所有模块都有init和destroy方法
 				!instance['init'] ? (instance['init'] = $.noop):0;
 				!instance['destroy'] ? (instance['destroy'] = $.noop):0;
 				
+				instance.init(sandbox,module,moduleId);
+				
+				if($.type(instance.children)=='array' && module.options.childrenAutoInit){
+				
+					var children = instance.children;
+					
+					for(var i=0, len = children.length;i<len;i++){
+					
+						switch($.type(children[i])){
+						
+							case 'function': children[i](sandbox,module,moduleId);break;
+							
+							case 'object':children[i].init&&children[i].init(sandbox,module,moduleId);break;
+						}
+					}
+				}
 				return instance;
 			},
 			/**
 			  *触发所有模块初始化完毕事件
 			 */
-			_fnTriggerAllModuleReadyEvent:function(){
+			__fnTriggerAllModuleReadyEvent:function(){
 				$(doc).trigger('MC.ready');
 			},
 			end:0
@@ -66,8 +82,8 @@
 			module:function(moduleId,creator,options){
 			
 				if($.type(moduleId)!=='string'){
-					creator = moduleId;
 					options = creator;
+					creator = moduleId;
 					moduleId = 'module'+$.now();
 				}
 				
@@ -97,6 +113,9 @@
 				};
 				isAutoInit&&this.start(moduleId);
 			},
+			layout:function(layoutConfig,creater,options){
+				//to do;
+			},
 			start:function(moduleId,type){
 				var self = this;
 			
@@ -112,32 +131,19 @@
 				if(!module){
 					console.log(5,'module:'+moduleId+' doesn\'t exit!');
 					return;
-				} 
-				module.instance = __fns.__fnCreateInstance(moduleId,module);
-
-				module.instance.init&&module.instance.init(module.instance.__sandbox,module,moduleId);
-				
-				if($.type(module.instance.children)=='array' && module.options.childrenAutoInit){
-				
-					var children = module.instance.children;
-					
-					for(var i=0, len = children.length;i<len;i++){
-					
-						switch($.type(children[i])){
-						
-							case 'function': children[i](module.instance.__sandbox,module,moduleId);break;
-							
-							case 'object':children[i].init&&children[i].init(module.instance.__sandbox,module,moduleId);break;
-						}
-					}
 				}
-				//触发所有模块初始化完毕
-				return this;
+				try{
+					module.instance = __fns.__fnCreateInstance(moduleId,module);	
+				}catch(e){
+					
+				}finally{
+					return this;
+				}	
 			},
 			startAll:function(){
 				var self = this;
-				$(doc).ready(function(){
-				console.log('startAll');
+				$(function(){
+					console.log('startAll');
 					for(var module in __modules){
 						
 						if(__modules[module]&&!__modules[module].instance){
@@ -145,14 +151,21 @@
 							self.start(module,'all');
 						}
 					}
-					__fns._fnTriggerAllModuleReadyEvent();
+					console.log(12,__modules);
+					__fns.__fnTriggerAllModuleReadyEvent();
 				});
 			},
-			restart:function(){
-				
+			restart:function(moduleId){
+				this.stop(moduleId).start(moduleId);
+				this.start(moduleId);
+				return this;
 			},
-			stop:function(){
-				
+			stop:function(moduleId){
+				var module = __modules[moduleId];
+				if(!module) return false;
+				module.destroy();
+				module.instance = null;
+				return this;
 			},
 			set:function(moduleId){
 				var self = this;
@@ -164,10 +177,15 @@
 					__moduleData[type] = data;
 					return true;
 				}
+			},
+			get:function(moduleId){
+				var module = __modules[moduleId];
+				if(!module || !module.instance) return $.noop;
+				var _moduleData = __modulesData[moduleId];
+				return function(type){
+					return _moduleData&&_moduleData[type];
+				}
 			}
 		}
 	}();
-	
-	
-	
 })(jQuery,this,document);

@@ -5,7 +5,6 @@
         <title>DO测试页面</title>
         <meta name="DO" content=""/>
         <meta name="keywords" content=""/>
-        <link href="http://style.china.alibaba.com/css/lib/fdev-v4/reset/reset-min.css" rel="stylesheet"/>
         <script src="http://style.china.alibaba.com/js/lib/fdev-v4/core/fdev-min.js"></script>
 		<!--<script src="Sandbox.js"></script>-->
 		<script src="mc.sandbox.js"></script>
@@ -29,10 +28,15 @@
 				console.log(sandbox);
 				console.log('child1');
 			}
+			MC.module(function(sandbox){
+				console.log('no module id');
+			});	
+			MC.module('.mod-test',function(sandbox){
 			
-			MC.module('#mod-test',function(sandbox){
-			
-			
+				sandbox.on(['test22'],function(event,data){
+					console.log(event);
+					console.log(data);
+				});	
 				console.log('test');
 				
 				return {
@@ -55,8 +59,15 @@
 			
 			MC.module('test2',function(sandbox){
 				console.log('test2');
-				
-			});
+				sandbox.notify('test22',{
+					bb:4
+				});
+				sandbox.on(function(event){
+					console.log('ready');
+					console.log(event);
+					console.log(11,sandbox.get('.mod-test')('node'));
+				});
+							});
 			MC.module('test23',{
 				init:function(){
 					console.log('test23');

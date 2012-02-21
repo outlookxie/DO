@@ -2,31 +2,31 @@
   * MC(Module Coding) 模块化编程Sandbox
  */
 
-
 (function($,win,doc,undefined){
-	var SandBox =  $.SandBox =function(scope,opt){
+	var SandBox =  win.Sandbox = $.SandBox =function(scope,opt){
 		this.moduleId = opt.moduleId;
 		this.module = opt.module;
 		this.options = opt.module.options;
-		this.node = this._getNode();
+		this.node = this.__getNode();
 		return this;
 	};
 	
 	$.extend(SandBox.prototype,{
 		constructor:SandBox,
-		_config:{
+		__config:{
 			modulePrefix:'module.',
 			modulePrefixReg:/^module.\w*/,
-			doPrefix:'MC.ready'
+			mcPrefix:'MC.ready'
 		},
-		_getEventType:function(eventType){
+		__getEventType:function(eventType){
 			var self = this;
-			if(!self._config.modulePrefixReg.test(eventType)&&eventType!==self._config.doPrefix){
-				eventType =  self._config.modulePrefix+eventType;
+			if(!self.__config.modulePrefixReg.test(eventType)&&eventType!==self.__config.mcPrefix){
+				eventType =  self.__config.modulePrefix+eventType;
+
 			}
 			return eventType;
 		},
-		_getNode:function(){
+		__getNode:function(){
 			var self = this,
 				moduleIdFix = self.moduleId,
 				nodeConfg = {},
@@ -34,10 +34,7 @@
 				selecter;
 				
 			selecter = /^#|\./.test(moduleIdFix) ? moduleIdFix : '#' + moduleIdFix;
-				
-				
-			moduleNode = $(selecter,document.body).first();
-			console.log(selecter);
+			moduleNode = $(selecter,doc.body).first();
 			if(moduleNode.length){
 				nodeConfg=moduleNode.data(self.options.configField);
 				MC.set(moduleIdFix)('node',{
@@ -60,11 +57,18 @@
 		on:function(eventType,handle,scope){
  			var self = this;
 			scope = scope || window;
+			
+			if($.type(eventType)==='function'){
+				scope = handle;
+				handle = eventType;
+				eventType = self.__config.mcPrefix;
+			}
+	
 			if($.type(eventType)==='string'){
 				eventType = [eventType];
 			}
 			$.each(eventType,function(idx,v){
-				eventType[idx] = self._getEventType(v);
+				eventType[idx] = self.__getEventType(v);
 			});
 			$(doc).bind(eventType.join(' '),function(event,data){
 				handle.apply(scope,[event,data]);
@@ -77,8 +81,11 @@
 		 */
 		notify:function(type,data){
 			var self = this;
-				type = self._getEventType(type);
+			type = self.__getEventType(type);
 			$(doc).trigger(type,data);
+		},
+		get:function(moduleId){
+			return MC.get(moduleId);
 		}
 	});
 	
