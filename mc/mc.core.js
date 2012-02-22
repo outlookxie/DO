@@ -7,7 +7,7 @@
 	
 	var SandBox = $.SandBox;
 	
-	var MC = function(){
+	var MC = (function(){
 	
 		var _defaultOptions = {
 			configField: 'mod-config',
@@ -186,7 +186,6 @@
 				}
 			}
 		}
-	}();
-	
-	$.extend(win.MC,MC);
-})(jQuery,this,document);
+	})();
+	win.MC = MC;
+})(jQuery,window,document);
