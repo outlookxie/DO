@@ -1,0 +1,87 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8"/>
+        <title>DO测试页面</title>
+        <meta name="DO" content=""/>
+        <meta name="keywords" content=""/>
+        <script src="http://style.china.alibaba.com/js/lib/fdev-v4/core/fdev-min.js"></script>
+		<!--<script src="Sandbox.js"></script>-->
+		<script src="mc.js"></script>
+        <base target="_blank"/>
+    </head>
+    <body>
+        <div id="doc">
+            <div id="alibar">alibar</div>
+            <div id="header" class="w952">header</div>
+            <div id="content" class="w952">
+				<div id="mod-test" data-mod-config='{"a":"12333333333"}'></div>
+				<div class="mod-test" data-mod-config='{"a":"132"}'></div>
+			</div>
+            <div id="footer">footer</div>
+        </div>
+        <script>
+			//DO.debug(true);
+			
+			function aa(){
+				console.log(sandbox);
+				console.log('child1');
+			}
+			MC.module(function(sandbox){
+				console.log('no module id');
+			});	
+			MC.module('.mod-test',function(sandbox){
+			
+				sandbox.on(['test22'],function(event,data){
+					console.log(event);
+					console.log(data);
+				});	
+				console.log('test');
+				
+				return {
+					init:function(){
+						//alert(12);
+					},
+					children:[
+						{
+							init:function(box){
+								console.log(box);
+							}
+						},
+						function(){
+							console.log('child2');
+						}
+					]
+				}
+				
+			});
+			
+			MC.module('test2',function(sandbox){
+				console.log('test2');
+				sandbox.notify('test22',{
+					bb:4
+				});
+				sandbox.on(function(event){
+					console.log('ready');
+					console.log(event);
+					console.log(11,sandbox.get('.mod-test')('node'));
+				});
+							});
+			MC.module('test23',{
+				init:function(){
+					console.log('test23');
+				},
+				children:[
+					{
+						init:function(){
+							console.log('test23-->child');
+						}
+					}
+				]
+			});
+			
+			MC.start('*');
+			
+		</script>
+    </body>
+</html>
