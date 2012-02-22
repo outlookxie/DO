@@ -7,11 +7,10 @@
 	
 	var SandBox = $.SandBox;
 	
-	var MC = win.MC = $.MC = function(){
+	var MC = function(){
 	
 		var _defaultOptions = {
 			configField: 'mod-config',
-			once: true,
 			root: null,
 			childrenAutoInit:true,
 			__type:'function'
@@ -62,7 +61,7 @@
 						
 							case 'function': children[i](sandbox,module,moduleId);break;
 							
-							case 'object':children[i].init&&children[i].init(sandbox,module,moduleId);break;
+							case 'object' : children[i].init&&children[i].init(sandbox,module,moduleId);break;
 						}
 					}
 				}
@@ -188,4 +187,6 @@
 			}
 		}
 	}();
+	
+	$.extend(win.MC,MC);
 })(jQuery,this,document);
