@@ -5,7 +5,7 @@
         <title>DO测试页面</title>
         <meta name="DO" content=""/>
         <meta name="keywords" content=""/>
-        <script src="http://style.china.alibaba.com/js/lib/fdev-v4/core/fdev-min.js"></script>
+        <script src="jquery-1.7.1.js"></script>
 		<!--<script src="Sandbox.js"></script>-->
 		<script src="mc.js"></script>
         <base target="_blank"/>
@@ -15,26 +15,21 @@
             <div id="alibar">alibar</div>
             <div id="header" class="w952">header</div>
             <div id="content" class="w952">
-				<div id="mod-test" data-mod-config='{"a":"12333333333"}'></div>
-				<div class="mod-test" data-mod-config='{"a":"132"}'></div>
+				<div id="mod-test" data-mod-config='{"a":"12333333333"}' style="height:600px;width:400px;border:1px solid red;">111</div>
+				<div id="mod-test23" data-mod-config='{"a":"132"}' style="height:200px;width:400px;border:1px solid red;"></div>
+				<div id="mod-test234" data-mod-config='{"a":"132"}' style="height:200px;width:400px;border:1px solid red;"></div>
 			</div>
             <div id="footer">footer</div>
         </div>
         <script>
-			//DO.debug(true);
-			
-			function aa(){
-				console.log(sandbox);
-				console.log('child1');
-			}
 			MC.module(function(sandbox){
 				console.log('no module id');
-			});	
-			MC.module('.mod-test',function(sandbox){
+			});
+			
+			MC.module('mod-test',function(sandbox){
 			
 				sandbox.on(['test22'],function(event,data){
 					console.log(event);
-					console.log(data);
 				});	
 				console.log('test');
 				
@@ -45,7 +40,7 @@
 					children:[
 						{
 							init:function(box){
-								console.log(box);
+								console.log(124,box);
 							}
 						},
 						function(){
@@ -57,29 +52,42 @@
 			});
 			
 			MC.module('test2',function(sandbox){
-				console.log('test2');
+				console.log('module-->test2');
 				sandbox.notify('test22',{
 					bb:4
 				});
 				sandbox.on(function(event){
-					console.log('ready');
-					console.log(event);
-					console.log(11,sandbox.get('.mod-test')('node'));
+					//console.log('ready');
+					//console.log(event);
+					console.log(11,sandbox.getModule('mod-test')('node'));
 				});
-							});
-			MC.module('test23',{
+			});
+			MC.module('@#mod-test23',{
 				init:function(){
-					console.log('test23');
+					console.log('modlue-->mod-test23');
 				},
 				children:[
 					{
 						init:function(){
-							console.log('test23-->child');
+							console.log('modlue-->mod-test23-->child');
 						}
-					}
-				]
+					}]
+				},{
+				event:'exposure'
 			});
-			
+			MC.module('@#mod-test234',{
+				init:function(){
+					console.log('modlue-->mod-test23');
+				},
+				children:[
+					{
+						init:function(){
+							console.log('modlue-->mod-test23-->child');
+						}
+					}]
+				},{
+				event:'exposure'
+			});
 			MC.start('*');
 			
 		</script>
