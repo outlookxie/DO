@@ -505,7 +505,8 @@
 				module.destroy();
 				module.instance = null;
 				return self;
-			}
+			},
+			end:0
 		}
 	})();
 	
