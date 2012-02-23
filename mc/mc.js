@@ -35,37 +35,10 @@
 		constructor:SandBox,
 		init:function(scope,module){
 			var self = this;
-			self.mc = scope;
+			self.__mc = scope;
 			self.module = module;
 			self.moduleId = module.moduleId;
-			self.module.node = self.__getModuleNodeData();
 			return self;
-		},
-		/**
-		 * 获取模块配置参数，依据页面配置变量
-		 */
-		__getModuleNodeData:function(){
-			var self = this,
-				moduleId = self.moduleId,
-				options = self.module.options,
-				nodeConfg = {},
-				moduleNode,
-				selecter;
-				
-			selecter = /^#|\./.test(moduleId) ? moduleId : '#' + moduleId;
-			moduleNode = $(selecter,DOC.body).first();
-			if(moduleNode.length){
-				nodeConfg=moduleNode.data(options.configField);
-				self.mc.__set(moduleId)('node',{
-					jqEl:moduleNode,
-					config:nodeConfg
-				});
-				return {
-					jqEl:moduleNode,
-					config:nodeConfg
-				}
-			}
-			return {};
 		},
 		/**
 		 * 注册监听事件，支持批量事件的监听
@@ -105,16 +78,19 @@
 		},
 		/**
 		 * 获取指定模块的信息
-		 * @param  type {String} 事件类型
+		 * @param  moduleId {String} 模块标识
 		 */
-		getModule:function(moduleId){
+		getModuleData:function(moduleId){
 			var self = this;
-			if(!moduleId) moduleId = self.moduleId;
-			return self.mc.__get(moduleId);
+			return self.__mc.__get(moduleId);
+		},
+		dump:function(){
+			var self = this;
+			return self.__mc.__dump();
 		},
 		data:function(k,v){
 			var self = this;
-			return self.mc.__data(k,v);
+			return self.__mc.__data(k,v);
 		},
 		end:0
 	};
@@ -155,6 +131,7 @@
 		
 		var __viewportHeight = 0;
 		
+		
 		$.extend(__fns,{
 			/**
 			  *模块实例化函数
@@ -162,9 +139,15 @@
 			  * @param module {Object} 模块数据模型
 			 */
 			__createInstance:function(module){
-				var moduleId = module.moduleId;
-				var sandbox = new SandBox(this,module);
-				var instance;
+				var self = this,
+					moduleId = module.moduleId,
+					sandbox,
+					instance;
+				
+				self.__node(module);
+				
+				sandbox = new SandBox(self,module);
+				
 				if(module.options.__type == 'object'){
 					instance = module.creator;
 				}else{
@@ -193,6 +176,24 @@
 					}
 				}
 				return instance;
+			},
+			__node:function(module){
+				var self = this,
+					moduleId = module.moduleId,
+					options = module.options,
+					nodeConfg = {},
+					moduleNode,
+					selecter;
+					
+				selecter = /^#|\./.test(moduleId) ? moduleId : '#' + moduleId;
+				moduleNode = $(selecter,DOC.body).first();
+				if(moduleNode.length){
+					nodeConfg=moduleNode.data(options.configField);
+					self.__set(moduleId)('node',{
+						jqEl:moduleNode,
+						config:nodeConfg
+					});
+				}
 			},
 			/**
 			  *触发所有模块初始化完毕事件
@@ -279,11 +280,11 @@
 			 * 判断元素是否已经到了可以加载的地方
 			 */
 			__checkPosition:function(item){
-				var ret = false;
-				var threshold = item[1].options.threshold;
-				var currentScrollTop = $(DOC).scrollTop();
-				var benchmark = currentScrollTop + __viewportHeight + threshold;
-				var currentOffsetTop = $(item[0]).offset().top;
+				var ret = false,
+					threshold = item[1].options.threshold,
+					currentScrollTop = $(DOC).scrollTop(),
+					benchmark = currentScrollTop + __viewportHeight + threshold,
+					currentOffsetTop = $(item[0]).offset().top;
 				
 				if(currentOffsetTop <= benchmark){
 					ret = true;
@@ -323,13 +324,14 @@
 			__get:function(moduleId){
 				var module = __modules[moduleId];
 				if(!module || !module.instance) return $.noop;
-				var _moduleData = __modulesData[moduleId];
+				var moduleData = __modulesData[moduleId];
+				
 				/**
-				  *	在获取到指定模块的情况下，指明要获取的数据
-				  * @param  type {String} 数据类型
-				 */
+				*	在获取到指定模块的情况下，指明要获取的数据
+				* @param  type {String} 数据类型
+				*/
 				return function(type){
-					return _moduleData&&_moduleData[type];
+					return moduleData&&moduleData[type];
 				}
 			},
 			/**
@@ -343,6 +345,16 @@
 				if($.type(v)==='string') return __staticData[k] = v;
 				
 				return false;
+			},
+			__dump:function(){
+				var self = this;
+				return {
+					'lazyModules' : __lazyModules,
+					'modules' : __modules,
+					'modulesData' : __modulesData,
+					'layoutData' : __layoutData,
+					'staticData' : __staticData
+				}
 			},
 			end:0
 		})
@@ -460,16 +472,16 @@
 			startAll:function(){
 				var self = this;
 				$(function(){
-					console.log('startAll');
+					console.log('mc-->startAll');
 					for(var module in __modules){
 						
 						if(__modules[module]&&!__modules[module].instance){
 							
 							self.start(module,'all');
 						}
-					}
-					console.log(12,__modules);
+					}	
 					__fns.__triggerAllModuleReadyEvent();
+					return self;
 				});
 			},
 			/**
@@ -487,11 +499,12 @@
 			  * @param  moduleId {String} 模块ID
 			 */
 			stop:function(moduleId){
+				var self = this;
 				var module = __modules[moduleId];
 				if(!module) return false;
 				module.destroy();
 				module.instance = null;
-				return this;
+				return self;
 			}
 		}
 	})();

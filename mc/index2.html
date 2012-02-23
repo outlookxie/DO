@@ -26,7 +26,7 @@
 				console.log('no module id');
 			});
 			
-			MC.module('mod-test',function(sandbox){
+			MC.module('#mod-test',function(sandbox){
 			
 				sandbox.on(['test22'],function(event,data){
 					console.log(event);
@@ -57,9 +57,11 @@
 					bb:4
 				});
 				sandbox.on(function(event){
-					//console.log('ready');
+					console.log('ready');
 					//console.log(event);
-					console.log(11,sandbox.getModule('mod-test')('node'));
+					console.log(11,sandbox.getModuleData('#mod-test')('node'));
+					
+					console.log(sandbox.dump());
 				});
 			});
 			MC.module('@#mod-test23',{
