@@ -18,7 +18,11 @@
 		},
 		AUTO_INIT_REG = /^~/,
 		LAZY_INIT_REG = /^@/,
-		DEBUG = typeof window.dmtrack ==="undefined" ? false : false;
+		MODULE_PREFIX_REG = /^#|\./,
+		DRAGROON_URL = 'http://www.baidu.com/',
+		DEBUG_MODE = typeof window.dmtrack ==="undefined" ? false : false,
+		DEBUG_READY = false;
+		
 	
 	var SandBox =  function(scope,module){
 		return new SandBox.fn.init(scope,module);
@@ -92,6 +96,26 @@
 			var self = this;
 			return self.__mc.__data(k,v);
 		},
+		info:function(){
+			var self = this;
+			return self.__log('info',arguments);
+		},
+		error:function(){
+			var self = this;
+			return self.__log('error',arguments);
+		},
+		log:function(){
+			var self = this;
+			return self.__log('log',arguments);
+		},
+		debug:function(){
+			var self = this;
+			return self.__log('debug',arguments);
+		},
+		__log:function(type,msg){
+			var self = this;
+			return self.__mc.__log(type,self.moduleId,msg);
+		},
 		end:0
 	};
 
@@ -113,6 +137,8 @@
 		var __modules = {};
 		//无序列保存延迟加载模块的信息		
 		var __lazyModules = {};
+		
+		var __moduleIds = [];
 			
 		//无序列保存模块的数据
 		var __modulesData = {};
@@ -182,11 +208,9 @@
 					moduleId = module.moduleId,
 					options = module.options,
 					nodeConfg = {},
-					moduleNode,
-					selecter;
+					moduleNode;
 					
-				selecter = /^#|\./.test(moduleId) ? moduleId : '#' + moduleId;
-				moduleNode = $(selecter,DOC.body).first();
+				moduleNode = $(moduleId,DOC.body).first();
 				if(moduleNode.length){
 					nodeConfg=moduleNode.data(options.configField);
 					self.__set(moduleId)('node',{
@@ -308,6 +332,8 @@
 			 */
 			__set:function(moduleId){
 				var self = this;
+				moduleId = /^#|\./.test(moduleId) ? moduleId : '#' + moduleId;
+				
 				if(!__modules[moduleId]) return $.noop;
 				
 				var __moduleData = __modulesData[moduleId]||(__modulesData[moduleId]={});
@@ -322,7 +348,12 @@
 			  * @param  moduleId {String} 模块ID
 			 */
 			__get:function(moduleId){
+				
+				 moduleId = /^#|\./.test(moduleId) ? moduleId : '#' + moduleId;
+				
+				
 				var module = __modules[moduleId];
+				
 				if(!module || !module.instance) return $.noop;
 				var moduleData = __modulesData[moduleId];
 				
@@ -353,8 +384,60 @@
 					'modules' : __modules,
 					'modulesData' : __modulesData,
 					'layoutData' : __layoutData,
-					'staticData' : __staticData
+					'staticData' : __staticData,
+					'moduleIds': __moduleIds
 				}
+			},
+			__log:function(type,moduleId,msg){
+				
+				var lever = {
+					'error':[0,'#FE6947'],
+					'wran':[1,'#FFFFC8'],
+					'info':[2,'#EBF5FF'],
+					'debug':[3,'C0C0C0'],
+					'log':[4,'#FFFFFF']
+				};
+				var msg =['mdoule:'+moduleId+'->'].concat([].slice.call(msg)).join('');
+				
+				function getApplationName(){
+					return 'test';
+				}
+				
+				if(DEBUG_MODE){
+				
+					if($.type(lever[type])=='array'&&lever[type][0]<=1){
+						var obj = {
+							'applation':getApplationName(),
+							'module_id':moduleId,
+							'url':encodeURIComponent(win.location.href),
+							'agent':navigator.userAgent,
+							'msg':msg
+						};
+						
+						(new Image()).src = DRAGROON_URL+'?'+$.param(obj);
+					}
+					return;
+				}else if(win.console&&win.console.log&&!$.browser.msie){
+					
+					console[console[type]?type:'log'](msg);
+					
+				}else if($.browser.msie&&/debug=true/i.test(location.search)){
+					if(!DEBUG_READY){
+						$('#MC-DEBUG').remove();
+						$('<div id="MC-DEBUG" style="margin-top:10px;padding:8px;border:dashed 1px;#FF7300;background-color:#fff;color:#000;"></div>').html('<ol></ol>').appendTo($(DOC.body));
+						DEBUG_READY = true;
+					}
+					var msgBox = $('#MC-DEBUG ol'),
+						color;
+						
+					if($.type(lever[type])=='array'){
+						color = lever[type][1];
+					}else{
+						color = lever['log'][1];
+					}
+					$('<li style="background-color:'+ color +';">').text('' + msg.join('')).appendTo(msgBox);
+				}
+				
 			},
 			end:0
 		})
@@ -372,7 +455,7 @@
 				if($.type(moduleId)!=='string'){
 					options = creator;
 					creator = moduleId;
-					moduleId = 'module'+$.now();
+					moduleId = '#module'+$.now();
 				}
 				
 				if(__modules[moduleId]||__lazyModules[moduleId]){
@@ -397,6 +480,10 @@
 				if(isLazyInit){
 					options = $.extend({}, __defaultLazyOptions, options);
 				}
+				
+				
+				moduleId = MODULE_PREFIX_REG.test(moduleId) ? moduleId : '#' + moduleId;
+				
 				targetModules[moduleId] = {
 					creator:creator,
 					instance:null,
@@ -404,8 +491,11 @@
 					moduleId:moduleId
 				};
 				isAutoInit&&self.start(moduleId);
+				
 				if(isLazyInit){
 					self.lazyStart(moduleId);
+				}else{
+					__moduleIds.push(moduleId);
 				}
 			},
 			layout:function(layoutConfig,creater,options){
@@ -423,6 +513,7 @@
 					self.startAll();
 					return;
 				};
+				moduleId = /^#|\./.test(moduleId) ? moduleId : '#' + moduleId;
 				var module = __modules[moduleId];
 				
 				if(!type&&!module){
@@ -435,7 +526,7 @@
 				try{
 					!module.instance&&(module.instance = __fns.__createInstance(module));	
 				}catch(e){
-					
+					__fns.__log('error',moduleId,['module init error']);
 				}finally{
 					return this;
 				}	
@@ -473,13 +564,14 @@
 				var self = this;
 				$(function(){
 					console.log('mc-->startAll');
-					for(var module in __modules){
-						
-						if(__modules[module]&&!__modules[module].instance){
+					var moduleId;
+					for(var i=0,len = __moduleIds.length;i<len;i++){
+						moduleId = __moduleIds[i];
+						if(__modules[moduleId]&&!__modules[moduleId].instance){
 							
-							self.start(module,'all');
+							self.start(moduleId,'all');
 						}
-					}	
+					}
 					__fns.__triggerAllModuleReadyEvent();
 					return self;
 				});
@@ -512,6 +604,4 @@
 	
 	win.MC = $.MC = MC;
 	
-	MC.SandBox = SandBox;
-
 })(jQuery,window);
