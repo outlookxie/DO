@@ -23,16 +23,21 @@
 		DEBUG_MODE = typeof window.dmtrack ==="undefined" ? false : false,
 		DEBUG_READY = false;
 		
-	
 	var SandBox =  function(scope,module){
 		return new SandBox.fn.init(scope,module);
 	};
 	
-	function getEventType(eventType){
+	function getEventNamespace(eventType,moduleId){
 		if(!MODULE_EVENT_PREFIX_REG.test(eventType)&&eventType!==MC_READY_EVENT_NAME){
-				eventType =  MODULE_EVENT_PREFIX+eventType;
+			eventType =  MODULE_EVENT_PREFIX+eventType;
+			if(moduleId){
+				moduleId = moduleId.replace('#','_').replace('.','__');
+				eventType = eventType + '.' + moduleId;
+			}else{
+				eventType = eventType + '.*';
+			}
 		}
-			return eventType;
+		return eventType;
 	}
 
 	SandBox.fn = SandBox.prototype = {
@@ -64,21 +69,38 @@
 				eventType = [eventType];
 			}
 			$.each(eventType,function(idx,v){
-				eventType[idx] = getEventType(v);
+				eventType[idx] = getEventNamespace(v,self.moduleId);
 			});
-			$(DOC).bind(eventType.join(' '),function(event,data){
+			$(win).bind(eventType.join(' '),function(event,data){
 				handle.apply(scope,[event,data]);
 			});
 		},
 		/**
-		 * 时间推送
+		 * 事件解绑
+		 * @param  eventType {String|Array} 事件类型
+		 * @param handle {Function} 事件响应之后的回调函数
+		 * @param  scope
+		 */
+		off:function(eventType){
+			if($.type(eventType)==='string'){
+				eventType = [eventType];
+				$(win).unbind(getEventNamespace(eventType));
+			}
+			if($.type(eventType)=='array'){
+				$.each(eventType,function(idx,v){
+					$(win).unbind(getEventNamespace(v));
+				})
+			}
+		},
+		/**
+		 * 事件推送
 		 * @param  type {String} 事件类型
 		 * @param data {Object} 事件数据
 		 */
 		notify:function(type,data){
 			var self = this;
-			type = getEventType(type);
-			$(DOC).trigger(type,data);
+			type = getEventNamespace(type);
+			$(win).trigger(type,data);
 		},
 		/**
 		 * 获取指定模块的信息
@@ -88,13 +110,17 @@
 			var self = this;
 			return self.__mc.__get(moduleId);
 		},
-		dump:function(){
+		layout:function(key){
 			var self = this;
-			return self.__mc.__dump();
+			return self.__mc.__getLayoutData(key);
 		},
 		data:function(k,v){
 			var self = this;
 			return self.__mc.__data(k,v);
+		},
+		dump:function(){
+			var self = this;
+			return self.__mc.__dump();
 		},
 		info:function(){
 			var self = this;
@@ -125,7 +151,6 @@
 	
 		var __defaultOptions = {
 			configField: 'mod-config',
-			root: null,
 			childrenAutoInit:true,
 			__type:'function'
 		};
@@ -223,7 +248,7 @@
 			  *触发所有模块初始化完毕事件
 			 */
 			__triggerAllModuleReadyEvent:function(){
-				$(DOC).trigger(MC_READY_EVENT_NAME);
+				$(win).trigger(MC_READY_EVENT_NAME);
 			},
 			/**
 			 * 将元素及对应的module到数组中
@@ -365,6 +390,12 @@
 					return moduleData&&moduleData[type];
 				}
 			},
+			__getLayoutData:function(key){
+				if(!key){
+					return {};
+				}
+				return __layoutData&&__layoutData[key];
+			},
 			/**
 			  *	简单的数据模型操作
 			  * @param  k {String} 模块ID
@@ -498,8 +529,23 @@
 					__moduleIds.push(moduleId);
 				}
 			},
-			layout:function(layoutConfig,creater,options){
-				//to do;
+			layout:function(datatype,value){
+				
+				if($.type(value)=='function'){
+					try{
+						value = value();
+					}catch(e){
+						throw 'layout data init error';
+					}
+					
+				}
+				if($.type(value)=='object'){
+					if(__layoutData[datatype]){
+						__layoutData[datatype] = $.extend({},__layoutData[datatype],value);
+					}else{
+						__layoutData[datatype] = value;
+					} 
+				}
 			},
 			/**
 			  *	初始化模块
@@ -565,6 +611,7 @@
 				$(function(){
 					console.log('mc-->startAll');
 					var moduleId;
+					
 					for(var i=0,len = __moduleIds.length;i<len;i++){
 						moduleId = __moduleIds[i];
 						if(__modules[moduleId]&&!__modules[moduleId].instance){

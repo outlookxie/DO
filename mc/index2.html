@@ -29,8 +29,8 @@
 				configField:'doc-config'
 			});
 			
-			MC.layout(function(sandbox){
-				
+			MC.layout('config',function(sandbox){
+				return {hh:55}
 			});
 			
 			
@@ -39,15 +39,15 @@
 			});
 			
 			MC.module('#mod-test',function(sandbox){
-				
-				//test();
-			
-				//sandbox.config
-			
-				sandbox.on(['test22'],function(event,data){
+				var handle = function(event,data){
 					console.log(event);
-				});	
-				console.log('test');
+					console.log(data);
+					console.log('event');
+					sandbox.off('test22');
+				}
+				sandbox.on(['test22'],handle);	
+				
+				console.log('moudle:#mod-test');
 				
 				return {
 					init:function(){
@@ -78,12 +78,16 @@
 					console.log('ready');
 					//console.log(event);
 					console.log(11,sandbox.getModuleData('#mod-test')('node'));
+					console.log(12,sandbox.layout('config'));
 					console.log(sandbox.dump());
 				});
 			});
 			MC.module('@#mod-test23',{
-				init:function(){
+				init:function(sandbox){
 					console.log('modlue-->mod-test23');
+					sandbox.notify('test22',{
+						bb:66
+					});
 				},
 				children:[
 					{
@@ -107,13 +111,9 @@
 				},{
 				event:'exposure'
 			});
+			
 			MC.start('*');
-			
-			function test(){
-				//throw 'aa';
-			}
-			test();
-			
+
 			
 		</script>
 	
