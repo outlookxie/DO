@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=gbk" />
+    <title>Searchweb Architecture Demo</title>
+	<style>
+		.delayload{
+			height:60px;
+			width:199px;
+			border:1px solid red;
+			float:left;
+		}
+		.placehoder{
+			height:1360px;
+			width:400px;
+			border:1px solid black;
+		}
+		.delayinit{
+			height:160px;
+			width:400px;
+			border:1px solid blue;
+		}
+	</style>
+  </head>
+
+  <body>
+    <div class="content" id="content">
+	
+		<input id="sandboxBtn" type="button" value="模块间交互"/>
+		<br/><br/>
+		<input id="delayInitBtn" type="button" value="延迟初始化模块"/>
+        <div class="placehoder"> I am just a placehoder.</div>
+		
+		<div id="mod-search-lazyload1" class="domDetail delayload" data-mod-config='{"name":"title","url":"http://china.alibaba.com/offer/post/json/validate_result.htm"}'>
+			延迟加载模块触发节点--曝光加载
+		</div>
+		<div class="domDetail delayload">
+			延迟加载模块触发节--曝光加载
+		</div>
+		
+		<div id="mod-search-lazyload2" combine-mod-config="combine1" class="delayinit">延迟加载模块触发节点--事件触发加载(mouseover)</div>
+		
+    </div>
+	
+	<!--页面上只应该有一个js文件被放置在<script>标签中加载，其余都是无阻塞加载-->
+	<script type="text/javascript" src="../core.seed.js"></script>
+	
+	<script>
+		+function(){alert(12)}();
+		jEngine.Core.Loader.js("http://style.china.alibaba.com/js/lib/fdev-v4/core/fdev-min.js")
+			.js("http://p.com/DO/v4.0/core/core.logger.js")
+			.js("http://p.com/DO/v4.0/core/core.sandbox.js")
+			.js("http://p.com/DO/v4.0/core/core.lazymodule.js")
+			.js("http://p.com/DO/v4.0/core/core.application.js")
+			//核心类加载完毕，开始加载业务类
+			.js("http://style.china.alibaba.com/js/app/search/v4.0/module/base/searchweb.js")
+			.js("http://p.com/DO/v4.0/core/example/config.js")
+			.js("http://p.com/DO/v4.0/core/example/module1.js")
+			.js("http://p.com/DO/v4.0/core/example/module2.js")
+			.js("http://p.com/DO/v4.0/core/example/lazyinitmodule.js")
+			.js("http://p.com/DO/v4.0/core/example/events.js")
+			.js("http://p.com/DO/v4.0/core/example/app.start.js");
+	</script>
+  </body>
+
+</html>
