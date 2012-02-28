@@ -1,5 +1,5 @@
-﻿/**
- * MC(Module Coding) Front-End Application Framework
+/**
+ * JEngine(Module Coding) Front-End Application Framework
  * @author:terence.wangt chuangui.xiecg
  * @date 2012-01-20
  * @version 1.0
@@ -11,7 +11,7 @@
 	var DOC = win.document, 
 		MODULE_EVENT_PREFIX = 'module.',
 		MODULE_EVENT_PREFIX_REG = /^module.\w*/,
-		MC_READY_EVENT_NAME = 'MC.ready',
+		JENGINE_READY_EVENT_NAME = 'JEngine.ready',
 		MODULE_EVNET_MAP = {
 			'scroll':'scroll.lazymodule',
 			'resize':'resize.lazymodule'
@@ -20,7 +20,7 @@
 		LAZY_INIT_REG = /^@/,
 		MODULE_PREFIX_REG = /^#|\./,
 		DRAGROON_URL = 'http://www.baidu.com/',
-		DEBUG_MODE = typeof window.dmtrack ==="undefined" ? false : false,
+		DEBUG_MODE = typeof window.dmtrack ==="undefined" ? true : false,
 		DEBUG_READY = false;
 		
 	var SandBox =  function(scope,module){
@@ -28,7 +28,7 @@
 	};
 	
 	function getEventNamespace(eventType,moduleId){
-		if(!MODULE_EVENT_PREFIX_REG.test(eventType)&&eventType!==MC_READY_EVENT_NAME){
+		if(!MODULE_EVENT_PREFIX_REG.test(eventType)&&eventType!==JENGINE_READY_EVENT_NAME){
 			eventType =  MODULE_EVENT_PREFIX+eventType;
 			if(moduleId){
 				moduleId = moduleId.replace('#','_').replace('.','__');
@@ -44,7 +44,7 @@
 		constructor:SandBox,
 		init:function(scope,module){
 			var self = this;
-			self.__mc = scope;
+			self.__jengine = scope;
 			self.module = module;
 			self.moduleId = module.moduleId;
 			return self;
@@ -62,7 +62,7 @@
 			if($.type(eventType)==='function'){
 				scope = handle;
 				handle = eventType;
-				eventType = MC_READY_EVENT_NAME;
+				eventType = JENGINE_READY_EVENT_NAME;
 			}
 	
 			if($.type(eventType)==='string'){
@@ -108,19 +108,19 @@
 		 */
 		getModuleData:function(moduleId){
 			var self = this;
-			return self.__mc.__get(moduleId);
+			return self.__jengine.__get(moduleId);
 		},
 		layout:function(key){
 			var self = this;
-			return self.__mc.__getLayoutData(key);
+			return self.__jengine.__getLayoutData(key);
 		},
 		data:function(k,v){
 			var self = this;
-			return self.__mc.__data(k,v);
+			return self.__jengine.__data(k,v);
 		},
 		dump:function(){
 			var self = this;
-			return self.__mc.__dump();
+			return self.__jengine.__dump();
 		},
 		info:function(){
 			var self = this;
@@ -140,14 +140,14 @@
 		},
 		__log:function(type,msg){
 			var self = this;
-			return self.__mc.__log(type,self.moduleId,msg);
+			return self.__jengine.__log(type,self.moduleId,msg);
 		},
 		end:0
 	};
 
 	SandBox.fn.init.prototype = SandBox.fn;
 
-	var MC = (function(){
+	var JEngine = (function(){
 	
 		var __defaultOptions = {
 			configField: 'mod-config',
@@ -248,7 +248,7 @@
 			  *触发所有模块初始化完毕事件
 			 */
 			__triggerAllModuleReadyEvent:function(){
-				$(win).trigger(MC_READY_EVENT_NAME);
+				$(win).trigger(JENGINE_READY_EVENT_NAME);
 			},
 			/**
 			 * 将元素及对应的module到数组中
@@ -428,17 +428,28 @@
 					'debug':[3,'C0C0C0'],
 					'log':[4,'#FFFFFF']
 				};
-				var msg =['mdoule:'+moduleId+'->'].concat([].slice.call(msg)).join('');
+				var msg =['mdouleId:'+moduleId+'>'].concat([].slice.call(msg)).join('');
 				
 				function getApplationName(){
-					return 'test';
+					
+					if(__layoutData&&__layoutData['config']&&__layoutData['config']['applation']){
+						return __layoutData['config']['applation'];
+					}
+					var appNameReg = /[http|https]:\/\/([\w-]*)\./;
+					
+					var v = win.location.href.match(appNameReg);
+					
+					if(v&&v.length==2){
+						return v[1];
+					}
+					return '404';
 				}
 				
 				if(DEBUG_MODE){
-				
+					var applation = getApplationName();
 					if($.type(lever[type])=='array'&&lever[type][0]<=1){
 						var obj = {
-							'applation':getApplationName(),
+							'applation':applation,
 							'module_id':moduleId,
 							'url':encodeURIComponent(win.location.href),
 							'agent':navigator.userAgent,
@@ -454,11 +465,11 @@
 					
 				}else if($.browser.msie&&/debug=true/i.test(location.search)){
 					if(!DEBUG_READY){
-						$('#MC-DEBUG').remove();
-						$('<div id="MC-DEBUG" style="margin-top:10px;padding:8px;border:dashed 1px;#FF7300;background-color:#fff;color:#000;"></div>').html('<ol></ol>').appendTo($(DOC.body));
+						$('#JEngine-DEBUG').remove();
+						$('<div id="JEngine-DEBUG" style="margin-top:10px;padding:8px;border:dashed 1px;#FF7300;background-color:#fff;color:#000;"></div>').html('<ol></ol>').appendTo($(DOC.body));
 						DEBUG_READY = true;
 					}
-					var msgBox = $('#MC-DEBUG ol'),
+					var msgBox = $('#JEngine-DEBUG ol'),
 						color;
 						
 					if($.type(lever[type])=='array'){
@@ -490,7 +501,7 @@
 				}
 				
 				if(__modules[moduleId]||__lazyModules[moduleId]){
-					console.log('warn: module ' + moduleId + ' already exist, ignore it.');
+					//console.log('warn: module ' + moduleId + ' already exist, ignore it.');
 				}
 				
 				options = $.extend({}, __defaultOptions, options);
@@ -559,14 +570,14 @@
 					self.startAll();
 					return;
 				};
-				moduleId = /^#|\./.test(moduleId) ? moduleId : '#' + moduleId;
+				moduleId = MODULE_PREFIX_REG.test(moduleId) ? moduleId : '#' + moduleId;
 				var module = __modules[moduleId];
 				
 				if(!type&&!module){
 					module = __modules[moduleId] = __lazyModules[moduleId];
 				}
 				if(!module){
-					console.log(5,'module:'+moduleId+' doesn\'t exit!');
+					//console.log(5,'module:'+moduleId+' doesn\'t exit!');
 					return;
 				}
 				try{
@@ -582,10 +593,10 @@
 			  * @param  moduleId {String} 模块ID，如果为 '*'，表示所有模块初始化，并且是在onDOMReady时刻
 			 */
 			lazyStart:function(moduleId){
-				if(/^@\w*/.test(moduleId)){
+				if(LAZY_INIT_REG.test(moduleId)){
 					moduleId.substring(1);
 				}
-				selecter = /^#|\./.test(moduleId) ? moduleId : '#' + moduleId;
+				selecter = MODULE_PREFIX_REG.test(moduleId) ? moduleId : '#' + moduleId;
 				jqEl = $(selecter).first();
 				
 				var module = __lazyModules[moduleId],
@@ -594,11 +605,11 @@
 				if(evt=='exposure'){
 					__fns.__handleExposureEvent(jqEl,module);
 				}else{
-					var handle = function() {
+					var handler = function() {
 						module.instance = __fns.__createInstance(module);
-						jqEl.unbind(evt,handle);						
+						jqEl.unbind(evt,handler);						
 					};
-					jqEl.bind(evt, handle);
+					jqEl.bind(evt, handler);
 				}
 			},
 			/**
@@ -609,7 +620,7 @@
 			startAll:function(){
 				var self = this;
 				$(function(){
-					console.log('mc-->startAll');
+					//console.log('JEngine-->startAll');
 					var moduleId;
 					
 					for(var i=0,len = __moduleIds.length;i<len;i++){
@@ -649,6 +660,6 @@
 		}
 	})();
 	
-	win.MC = $.MC = MC;
+	win.JEngine = $.JEngine = JEngine;
 	
 })(jQuery,window);

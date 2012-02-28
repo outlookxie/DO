@@ -7,7 +7,7 @@
         <meta name="keywords" content=""/>
         <script src="jquery-1.7.1.js"></script>
 		<!--<script src="Sandbox.js"></script>-->
-		<script src="mc.js"></script>
+		<script src="jengine.js"></script>
         <base target="_blank"/>
     </head>
     <body>
@@ -23,22 +23,30 @@
         </div>
         <script>
 		
-			MC.layout('config',{
+			/*var console = {};
+			
+			console.log =function(){
+			
+			};*/
+		
+			JEngine.layout('config',{
 				applation:'company-search',
 				root:'#doc',
 				configField:'doc-config'
 			});
 			
-			MC.layout('config',function(sandbox){
+			JEngine.layout('config',function(sandbox){
 				return {hh:55}
 			});
 			
 			
-			MC.module(function(sandbox){
+			JEngine.module(function(sandbox){
 				console.log('no module id');
+				
+				a.b = 2;
 			});
 			
-			MC.module('#mod-test',function(sandbox){
+			JEngine.module('#mod-test',function(sandbox){
 				var handle = function(event,data){
 					console.log(event);
 					console.log(data);
@@ -67,9 +75,9 @@
 				
 			});
 			
-			//MC.start('#mod-test');
+			//JEngine.start('#mod-test');
 			
-			MC.module('.test2',function(sandbox){
+			JEngine.module('.test2',function(sandbox){
 				console.log('module-->test2');
 				sandbox.notify('test22',{
 					bb:4
@@ -82,7 +90,7 @@
 					console.log(sandbox.dump());
 				});
 			});
-			MC.module('@#mod-test23',{
+			JEngine.module('@#mod-test23',{
 				init:function(sandbox){
 					console.log('modlue-->mod-test23');
 					sandbox.notify('test22',{
@@ -98,7 +106,7 @@
 				},{
 				event:'exposure'
 			});
-			MC.module('@#mod-test234',{
+			JEngine.module('@#mod-test234',{
 				init:function(){
 					console.log('modlue-->mod-test23');
 				},
@@ -112,8 +120,18 @@
 				event:'exposure'
 			});
 			
-			MC.start('*');
+			JEngine.start('*');
 
+			
+			function Test(){
+				this.init();
+			}
+			
+			Test.prototype.init = function(){
+				alert(12);
+			}
+			
+			Test();
 			
 		</script>
 	

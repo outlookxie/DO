@@ -23,6 +23,8 @@
 			create:function(data){
 
 				alert("Module2 got the message:" + data.msg);
+				
+				Sandbox.off( Searchweb.Config.Events.DELETE, this.create);
 			},
 			
 			createHTML:function(){

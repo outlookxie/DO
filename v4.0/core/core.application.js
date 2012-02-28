@@ -263,6 +263,19 @@
 			//从dom节点中获取埋入的后端数据 data-mod-config={"date":"1965-09-01","time":"19:30"}
 			var domId = "#" + moduleId;
 			var domNode = $(domId);
+			
+			
+			//这里建议采用.data的方式，框架帮你处理这一层
+			
+			
+			/*
+			
+			if(domNode.length>0){
+				opt.data  = domNode.data(this.config.dataField);
+			}
+
+			*/
+			
 			if(domNode.length>0){
 				var data = domNode.attr(this.config.dataField);
 				if(data && data.trim()){
