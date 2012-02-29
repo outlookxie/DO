@@ -6,7 +6,6 @@
         <meta name="DO" content=""/>
         <meta name="keywords" content=""/>
         <script src="jquery-1.7.1.js"></script>
-		<!--<script src="Sandbox.js"></script>-->
 		<script src="jengine.js"></script>
         <base target="_blank"/>
     </head>
@@ -42,7 +41,6 @@
 			
 			JEngine.module(function(sandbox){
 				console.log('no module id');
-				
 				a.b = 2;
 			});
 			
@@ -121,17 +119,6 @@
 			});
 			
 			JEngine.start('*');
-
-			
-			function Test(){
-				this.init();
-			}
-			
-			Test.prototype.init = function(){
-				alert(12);
-			}
-			
-			Test();
 			
 		</script>
 	

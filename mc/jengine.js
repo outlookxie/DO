@@ -8,6 +8,8 @@
 
 (function($,win,undefined){
 
+	// 定义一些全局变量
+
 	var DOC = win.document, 
 		MODULE_EVENT_PREFIX = 'module.',
 		MODULE_EVENT_PREFIX_REG = /^module.\w*/,
@@ -19,14 +21,25 @@
 		AUTO_INIT_REG = /^~/,
 		LAZY_INIT_REG = /^@/,
 		MODULE_PREFIX_REG = /^#|\./,
-		DRAGROON_URL = 'http://www.baidu.com/',
-		DEBUG_MODE = typeof window.dmtrack ==="undefined" ? true : false,
+		DRAGROON_MONITOR_URL = 'http://checktoken1.alibaba.com/monitor-ex/browser.servlet?method=error',
+		PRODUCT_MODE = typeof window.dmtrack ==="undefined" ? true : false,
+		DEBUG_MODE = /debug=true/i.test(win.location.search),
 		DEBUG_READY = false;
-		
+	
+	/**
+	 * 沙箱
+	 * @param {Object} scope 作用域,这里固定值为'JEngine'
+	 * @param {Object} module 通过JEngine定义的module
+	 */	
 	var SandBox =  function(scope,module){
 		return new SandBox.fn.init(scope,module);
 	};
 	
+	/**
+	 * 获取自定义事件的命名空间，这里做了2层处理：(1)如果传递了moudleId，则采取on模式,需要在自定义事件中跟上自己的memberId,否则采取nitify模式，需要被广播;(2)对于JEngine事件，不做任何处理
+	 * @param {String} eventType 事件的type
+	 * @param {String} moduleId 模块的ID
+	 */
 	function getEventNamespace(eventType,moduleId){
 		if(!MODULE_EVENT_PREFIX_REG.test(eventType)&&eventType!==JENGINE_READY_EVENT_NAME){
 			eventType =  MODULE_EVENT_PREFIX+eventType;
@@ -42,6 +55,11 @@
 
 	SandBox.fn = SandBox.prototype = {
 		constructor:SandBox,
+		/**
+		 * 沙箱初始化，做基本的赋值操作
+		 * @param {Object} scope
+		 * @param {Object} module
+		 */
 		init:function(scope,module){
 			var self = this;
 			self.__jengine = scope;
@@ -110,34 +128,67 @@
 			var self = this;
 			return self.__jengine.__get(moduleId);
 		},
+		/**
+		 * 获取布局的自定义数据
+		 * @param {String} key
+		 */
 		layout:function(key){
 			var self = this;
 			return self.__jengine.__getLayoutData(key);
 		},
+		/**
+		 * 获取静态数据，JEngine维护一个简单的数据模型,数据结构是一个简单的json
+		 * @param {String} k
+		 * @param {Object} v
+		 */
 		data:function(k,v){
 			var self = this;
 			return self.__jengine.__data(k,v);
 		},
+		/**
+		 * 获取JEngine所有的数据，便于debug
+		 */
 		dump:function(){
 			var self = this;
 			return self.__jengine.__dump();
 		},
+		/**
+		 * log的info模式
+		 * @param 参考console.info()
+		 */
 		info:function(){
 			var self = this;
 			return self.__log('info',arguments);
 		},
+		/**
+		 * log的error模式
+		 * @param 参考console.info()
+		 */
 		error:function(){
 			var self = this;
 			return self.__log('error',arguments);
 		},
+		/**
+		 * log模式
+		 * @param 参考console.info()
+		 */
 		log:function(){
 			var self = this;
 			return self.__log('log',arguments);
 		},
+		/**
+		 * log的debug模式
+		 * @param 参考console.info()
+		 */
 		debug:function(){
 			var self = this;
 			return self.__log('debug',arguments);
 		},
+		/**
+		 * log私有函数，会去统一调用JEngine的log,实现一个简单的引用
+		 * @param {Object} type
+		 * @param {Object} msg
+		 */
 		__log:function(type,msg){
 			var self = this;
 			return self.__jengine.__log(type,self.moduleId,msg);
@@ -146,7 +197,10 @@
 	};
 
 	SandBox.fn.init.prototype = SandBox.fn;
-
+	
+	/**
+	 * 
+	 */
 	var JEngine = (function(){
 	
 		var __defaultOptions = {
@@ -160,16 +214,20 @@
 	
 		//无序列保存注册的模块的信息
 		var __modules = {};
+		
 		//无序列保存延迟加载模块的信息		
 		var __lazyModules = {};
 		
+		//无序列保存注册的模块ID，初始化依赖队列，保证顺序
 		var __moduleIds = [];
 			
 		//无序列保存模块的数据
 		var __modulesData = {};
-
+	
+		//无序列保存布局的数据
 		var __layoutData = {};
 		
+		//无序列保存静态的数据，维护一个简单的数据模型
 		var __staticData = {};
 		
 		var __exposurePool = [];
@@ -228,6 +286,10 @@
 				}
 				return instance;
 			},
+			/**
+			 * 获取当前模块对应节点上的配置信息,对于当前模块的ID or ClassName不存在页面上，则不做任何处理
+			 * @param {Object} module
+			 */
 			__node:function(module){
 				var self = this,
 					moduleId = module.moduleId,
@@ -265,6 +327,9 @@
 				}
 				this.__loadModules();
 			},
+			/**
+			 * 获取视窗大小
+			 */
 			__getViewportHeight:function(){
 				return __docBody.height();
 			},
@@ -299,6 +364,9 @@
 					method.call(context);
 				},100);
 			},
+			/**
+			 * 获取满足条件的modules
+			 */
 			__loadModules:function(){
 				var self = this;
 				self.__filter(__exposurePool, self.__runCallback, self);
@@ -308,6 +376,12 @@
 					self.__removeEvent();
 				}
 			},
+			/**
+			 * 过滤模块
+			 * @param {Array} arr
+			 * @param {Function} method
+			 * @param {Object} context
+			 */
 			__filter:function(arr, method, context){
 				var item;
 				for(var i=0;i<arr.length;) {
@@ -321,12 +395,17 @@
 					}
 				}
 			},
+			/**
+			 * 执行回调函数
+			 * @param {Array} arr 保存module的一组信息
+			 */
 			__runCallback:function(arr){
 				var moudle = arr[1];
 				!moudle.instance&&(moudle.instance = this.__createInstance(moudle));
 			},
 			/**
 			 * 判断元素是否已经到了可以加载的地方
+			 * @param {Array} item
 			 */
 			__checkPosition:function(item){
 				var ret = false,
@@ -390,6 +469,10 @@
 					return moduleData&&moduleData[type];
 				}
 			},
+			/**
+			 * 获取布局的对应信息
+			 * @param {String} key
+			 */
 			__getLayoutData:function(key){
 				if(!key){
 					return {};
@@ -397,8 +480,8 @@
 				return __layoutData&&__layoutData[key];
 			},
 			/**
-			  *	简单的数据模型操作
-			  * @param  k {String} 模块ID
+			 *	简单的数据模型操作
+			 * @param  k {String} 模块ID
 			 */
 			__data:function(k,v){
 				if(!v){
@@ -408,6 +491,9 @@
 				
 				return false;
 			},
+			/**
+			 * 输出所有JEngine的数据
+			 */
 			__dump:function(){
 				var self = this;
 				return {
@@ -419,6 +505,12 @@
 					'moduleIds': __moduleIds
 				}
 			},
+			/**
+			 * 日志处理
+			 * @param {String} type
+			 * @param {Object} moduleId
+			 * @param {String} msg
+			 */
 			__log:function(type,moduleId,msg){
 				
 				var lever = {
@@ -442,28 +534,35 @@
 					if(v&&v.length==2){
 						return v[1];
 					}
-					return '404';
+					return 'unknown';
 				}
 				
-				if(DEBUG_MODE){
+				if(PRODUCT_MODE&&!DEBUG_MODE){
 					var applation = getApplationName();
 					if($.type(lever[type])=='array'&&lever[type][0]<=1){
 						var obj = {
-							'applation':applation,
-							'module_id':moduleId,
+							'AppNum':applation,
+							'PageId':win.dmtrack_pageid?win.dmtrack_pageid:'',
 							'url':encodeURIComponent(win.location.href),
-							'agent':navigator.userAgent,
-							'msg':msg
+							'ua':navigator.userAgent,
+							'errName':'',
+							'errFileName':'',
+							'errUrl':'',
+							'errLineNum':'',
+							'errMsg':msg,
+							'errStack':'',
+							'errOtherData':'',
+							'session':'',
+							'pageSeed':''
 						};
-						
-						(new Image()).src = DRAGROON_URL+'?'+$.param(obj);
+						(new Image()).src = DRAGROON_MONITOR_URL+$.param(obj);
 					}
 					return;
 				}else if(win.console&&win.console.log&&!$.browser.msie){
 					
 					console[console[type]?type:'log'](msg);
 					
-				}else if($.browser.msie&&/debug=true/i.test(location.search)){
+				}else if($.browser.msie&&DEBUG_MODE){
 					if(!DEBUG_READY){
 						$('#JEngine-DEBUG').remove();
 						$('<div id="JEngine-DEBUG" style="margin-top:10px;padding:8px;border:dashed 1px;#FF7300;background-color:#fff;color:#000;"></div>').html('<ol></ol>').appendTo($(DOC.body));
@@ -540,6 +639,11 @@
 					__moduleIds.push(moduleId);
 				}
 			},
+			/**
+			 * 布局定义
+			 * @param {String} datatype
+			 * @param {Object|Function} value
+			 */
 			layout:function(datatype,value){
 				
 				if($.type(value)=='function'){
