@@ -670,7 +670,7 @@
 			start:function(moduleId,type){
 				var self = this;
 			
-				if(arguments.length==1&&arguments[0]=='*') {
+				if(arguments.length===1&&arguments[0]==='*') {
 					self.startAll();
 					return;
 				};
@@ -694,7 +694,7 @@
 			},
 			/**
 			  *	延迟初始化模块
-			  * @param  moduleId {String} 模块ID，如果为 '*'，表示所有模块初始化，并且是在onDOMReady时刻
+			  * @param  moduleId {String} 模块ID
 			 */
 			lazyStart:function(moduleId){
 				if(LAZY_INIT_REG.test(moduleId)){
@@ -702,6 +702,8 @@
 				}
 				selecter = MODULE_PREFIX_REG.test(moduleId) ? moduleId : '#' + moduleId;
 				jqEl = $(selecter).first();
+				
+				if(!jqEl.length) return;
 				
 				var module = __lazyModules[moduleId],
 					evt = module.options.event;
